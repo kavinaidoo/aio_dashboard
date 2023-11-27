@@ -1,0 +1,9 @@
+#macOS
+.DS_Store
+
+#vscode
+.vscode
+.micropico
+
+#secret stuff
+secrets.py
