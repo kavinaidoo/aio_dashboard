@@ -188,7 +188,7 @@ var lineChart = bb.generate({ // Generates the History chart
     bindto: "#lineChart"
 });
 
-if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or feedname are blank, check query params for the information
+if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or feedname are blank, check query parameters for the information
   urlParams = new URLSearchParams(window.location.search)
   adafruitIOUsername = urlParams.get("adafruitIOUsername")
   adafruitIOFeedname = urlParams.get("adafruitIOFeedname")
