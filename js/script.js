@@ -1,19 +1,20 @@
 
 //Setup Variables
 
-var adafruitIOUsername = ""                 // Adafruit IO username
-var adafruitIOFeedname = ""                 // Adafruit IO feed name
-var numberOfhistoryDataPoints = "60"        // Number of data points shown on history chart
-var usertimeZone = "Africa/Johannesburg"    // Transforms the time to your time zone
-var yAxisDataLabel = 'Pressure'             // Add a label to your data on history chart
-var warningMinSinceLastUpdate = 15          // How long (in minutes) before showing yellow warning message
-var dataMinMax = [0,600]                    // Max and min value for both charts
-var gaugeUnit = "kPa"                       // Adds a unit to the gauge
-var gaugeColorSwitchValues = [30,60,90,100] // Changes color of gauge based on these values [<=red, orange, yellow, >=green]
-var historyChartRedGreenValue = 100         // The region above this will have a green background, below will have red
-var autoRefreshInterval = 0                 // How long (in seconds) between auto refreshing. If 0, will not auto refresh.
-var refreshDelay = 10                       // How long (in seconds) to show loading icon when refresh is button is pressed 
-var enableLogging = false                   // Enables console.logs
+var adafruitIOUsername = ""                       // Adafruit IO username
+var adafruitIOFeedname = ""                       // Adafruit IO feed name
+var numberOfhistoryDataPoints = "60"              // Number of data points shown on history chart
+var usertimeZone = "Africa/Johannesburg"          // Transforms the time to your time zone
+var yAxisDataLabel = 'Pressure'                   // Add a label to your data on history chart
+var yAxisTickValues = [0,125,250,375,500]         // Values to show on the y-axis
+var warningMinSinceLastUpdate = 15                // How long (in minutes) before showing yellow warning message
+var dataMinMax = [0,500]                          // Max and min value for both charts
+var gaugeUnit = "kPa"                             // Adds a unit to the gauge
+var gaugeColorSwitchValues = [30,60,90,100]       // Changes color of gauge based on these values [<=red, orange, yellow, >=green]
+var historyChartRedGreenValue = 100               // The region above this will have a green background, below will have red
+var autoRefreshInterval = 0                       // How long (in seconds) between auto refreshing. If 0, will not auto refresh.
+var refreshDelay = 5                              // How long (in seconds) to show loading icon when refresh is button is pressed 
+var enableLogging = false                         // Enables console.logs
 
 function retrieveFromIO(){
   var fetchURL = 'https://io.adafruit.com/api/v2/'+adafruitIOUsername+'/feeds/'+adafruitIOFeedname+'/data/?limit='+numberOfhistoryDataPoints
@@ -40,24 +41,23 @@ function retrieveFromIO(){
 
         if (minSinceLastUpdate > warningMinSinceLastUpdate){
 
-          oldDataElement = document.querySelector(".oldData")
-          oldDataElement.style = "display:block;"
-          oldDataElement.innerText = "Data is "+minSinceLastUpdate+" minutes old, sensor does not have power or internet access."
+          statusAlert("Data is "+minSinceLastUpdate+" minutes old, sensor does not have power or internet access.","warning")
 
         } else {
 
-          newDataElement = document.querySelector(".newData")
-          newDataElement.style = "display:block;"
+          var alertText = ''
 
           if (minSinceLastUpdate < 1){
-            newDataElement.innerText = "Data updated less than a minute ago."         
+            alertText = "Data updated less than a minute ago."         
           }
           if (minSinceLastUpdate == 1){
-            newDataElement.innerText = "Data updated a minute ago."         
+            alertText = "Data updated a minute ago."         
           }
           if (minSinceLastUpdate > 1){ 
-            newDataElement.innerText = "Data updated "+minSinceLastUpdate+" minutes ago."
+            alertText = "Data updated "+minSinceLastUpdate+" minutes ago."
           }
+
+          statusAlert(alertText,"success")
 
         }
           
@@ -100,9 +100,18 @@ function retrieveFromIO(){
 
         document.querySelector(".lds-roller").style = "display:none;"
 
-        document.querySelector(".unableToLoadData").style = "display:block;"
+        statusAlert("Unable to connect to service, please reload page.","warning")
 
     });
+
+}
+
+function statusAlert(msg,alertType) {
+  var alertElement = document.getElementById('alertArea')
+
+  alertElement.innerText = msg;
+  alertElement.className = "alert alert-"+alertType;
+  alertElement.style = "display:block";
 
 }
 
@@ -148,6 +157,9 @@ var lineChart = bb.generate({ // Generates the History chart
         Pressure: "white"
       }
     },
+    legend: {
+      show: false
+    },
     axis: {
       x: {
         label: 'Time',
@@ -160,7 +172,10 @@ var lineChart = bb.generate({ // Generates the History chart
       y: {
         label: yAxisDataLabel,
         max: dataMinMax[1],
-        min: dataMinMax[0]
+        min: dataMinMax[0],
+        tick: {
+          values: yAxisTickValues 
+        }
       }
     },
     regions: [
@@ -194,18 +209,24 @@ if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or fee
   adafruitIOFeedname = urlParams.get("adafruitIOFeedname")
 }
 
-retrieveFromIO()
+function delayedRetrieveFromIO(delay){  // retrieves from IO after delay
+  document.querySelector(".lds-roller").style = "display:block;"
+  setTimeout(function(){
+    retrieveFromIO()
+  },delay*1000); 
+}
 
-if (autoRefreshInterval){
+if (autoRefreshInterval){ // refreshes after a certain interval
   intervalId = window.setInterval(function(){
     document.querySelector(".lds-roller").style = "display:block;"
     retrieveFromIO()
   }, autoRefreshInterval*1000)
 }
 
-document.getElementById("refreshButton").addEventListener("click", function() {
-  document.querySelector(".lds-roller").style = "display:block;"
-  setTimeout(function(){
-    retrieveFromIO()
-  },refreshDelay*1000);  
+document.getElementById("refreshButton").addEventListener("click", function() { // adds functionality to refresh button
+  delayedRetrieveFromIO(refreshDelay)
+})
+
+window.addEventListener("focus", function() { // reloads page when a user returns to it
+  delayedRetrieveFromIO(refreshDelay)
 })
