@@ -1,5 +1,5 @@
 
-//Setup Variables
+// --------------- Setup Variables
 
 var adafruitIOUsername = ""                       // Adafruit IO username
 var adafruitIOFeedname = ""                       // Adafruit IO feed name
@@ -15,6 +15,8 @@ var historyChartRedGreenValue = 100               // The region above this will 
 var autoRefreshInterval = 0                       // How long (in seconds) between auto refreshing. If 0, will not auto refresh.
 var refreshDelay = 5                              // How long (in seconds) to show loading icon when refresh is button is pressed 
 var enableLogging = false                         // Enables console.logs
+
+// --------------- Function Declaration
 
 function retrieveFromIO(){
   var fetchURL = 'https://io.adafruit.com/api/v2/'+adafruitIOUsername+'/feeds/'+adafruitIOFeedname+'/data/?limit='+numberOfhistoryDataPoints
@@ -115,6 +117,15 @@ function statusAlert(msg,alertType) {
 
 }
 
+function delayedRetrieveFromIO(delay){  // retrieves from IO after delay
+  document.querySelector(".lds-roller").style = "display:block;"
+  setTimeout(function(){
+    retrieveFromIO()
+  },delay*1000); 
+}
+
+// --------------- Chart Definitions
+
 var gaugeChart = bb.generate({ // Generates the Gauge chart
     data: {
       columns: [
@@ -203,18 +214,7 @@ var lineChart = bb.generate({ // Generates the History chart
     bindto: "#lineChart"
 });
 
-if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or feedname are blank, check query parameters for the information
-  urlParams = new URLSearchParams(window.location.search)
-  adafruitIOUsername = urlParams.get("adafruitIOUsername")
-  adafruitIOFeedname = urlParams.get("adafruitIOFeedname")
-}
-
-function delayedRetrieveFromIO(delay){  // retrieves from IO after delay
-  document.querySelector(".lds-roller").style = "display:block;"
-  setTimeout(function(){
-    retrieveFromIO()
-  },delay*1000); 
-}
+// --------------- Listeners for events
 
 if (autoRefreshInterval){ // refreshes after a certain interval
   intervalId = window.setInterval(function(){
@@ -227,6 +227,18 @@ document.getElementById("refreshButton").addEventListener("click", function() { 
   delayedRetrieveFromIO(refreshDelay)
 })
 
-window.addEventListener("focus", function() { // reloads page when a user returns to it
-  delayedRetrieveFromIO(refreshDelay)
-})
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden) {
+    delayedRetrieveFromIO(refreshDelay)
+  } 
+});
+
+// --------------- Main Code
+
+if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or feedname are blank, check query parameters for the information
+  urlParams = new URLSearchParams(window.location.search)
+  adafruitIOUsername = urlParams.get("adafruitIOUsername")
+  adafruitIOFeedname = urlParams.get("adafruitIOFeedname")
+}
+
+retrieveFromIO()
