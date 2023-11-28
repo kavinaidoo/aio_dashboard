@@ -18,7 +18,7 @@ var enableLogging = false                         // Enables console.logs
 
 // --------------- Function Declaration
 
-function retrieveFromIO(){
+function retrieveFromIO(){ // retrieves data from Adafruit IO and plots charts
   var fetchURL = 'https://io.adafruit.com/api/v2/'+adafruitIOUsername+'/feeds/'+adafruitIOFeedname+'/data/?limit='+numberOfhistoryDataPoints
   fetch(fetchURL).then(function (response) {
 	// The API call was successful!
@@ -32,7 +32,7 @@ function retrieveFromIO(){
     }).then(function (data) {
         // This is the JSON from our response
 
-        document.querySelector(".lds-roller").style = "display:none;"
+        showLoadingSpinner(false)
 
         if (enableLogging){
           console.log("Response from Adafruit.IO")
@@ -43,8 +43,8 @@ function retrieveFromIO(){
 
         if (minSinceLastUpdate > warningMinSinceLastUpdate){
 
-          statusAlert("Data is "+minSinceLastUpdate+" minutes old, sensor does not have power or internet access.","warning")
-
+          statusAlert("Data is "+minSinceLastUpdate+" minutes old, sensor does not have power or internet access.","warning",true)
+          
         } else {
 
           var alertText = ''
@@ -59,7 +59,7 @@ function retrieveFromIO(){
             alertText = "Data updated "+minSinceLastUpdate+" minutes ago."
           }
 
-          statusAlert(alertText,"success")
+          statusAlert(alertText,"success",true)
 
         }
           
@@ -100,25 +100,73 @@ function retrieveFromIO(){
         // There was an error
         console.warn('Something went wrong.', err);
 
-        document.querySelector(".lds-roller").style = "display:none;"
+        showLoadingSpinner(false)
 
-        statusAlert("Unable to connect to service, please reload page.","warning")
+        statusAlert("Unable to connect to service, please reload page.","warning",true)
 
     });
 
 }
 
-function statusAlert(msg,alertType) {
+function showLoadingSpinner(status){ // shows loading spinner
+  statusAlert("","success",false)
+  if (status){
+    document.getElementById("loadingSpinner").style = "display:block;"
+    darkenCharts(true)
+
+  } else {
+    document.getElementById("loadingSpinner").style = "display:none;"  
+    darkenCharts(false)
+
+  }
+}
+
+function darkenCharts(status){ //darkens the gauge and history chart
+  if(status){
+    var gaugeColorElement = document.querySelector(".bb-shapes-Last-Reading path") // darken gauge
+    if (gaugeColorElement){
+      gaugeColorElement.style.fill = "rgba(1,1,1,0.5)"
+    }
+
+    var gaugeLegendElement = document.querySelector(".bb-legend-item-Last-Reading line") // darken legend square
+    if (gaugeLegendElement){
+      gaugeLegendElement.style.stroke = "rgba(1,1,1,0.5)"
+    }
+
+    var historyRegion0 = document.querySelector(".bb-region-0 rect") //darken regions on chart
+    if (historyRegion0){
+      historyRegion0.style.fill = "rgba(1,1,1,0.5)"
+    }
+    var historyRegion1 = document.querySelector(".bb-region-1 rect") //darken regions on chart
+    if (historyRegion1){
+      historyRegion1.style.fill = "rgba(1,1,1,0.5)"
+    }
+  } else {
+    var historyRegion0 = document.querySelector(".bb-region-0 rect") //set color of regions on chart
+    if (historyRegion0){
+      historyRegion0.style.fill = "rgba(74, 180, 70, 1)"
+    }
+    var historyRegion1 = document.querySelector(".bb-region-1 rect") //set color of regions on chart
+    if (historyRegion1){
+      historyRegion1.style.fill = "rgba(180, 70, 70, 1)"
+    }
+  }
+}
+
+function statusAlert(msg,alertType,show) { // shows current status
   var alertElement = document.getElementById('alertArea')
 
   alertElement.innerText = msg;
   alertElement.className = "alert alert-"+alertType;
-  alertElement.style = "display:block";
-
+  if (show){
+    alertElement.style = "display:block";
+  } else {
+    alertElement.style = "display:none";
+  }
 }
 
 function delayedRetrieveFromIO(delay){  // retrieves from IO after delay
-  document.querySelector(".lds-roller").style = "display:block;"
+  showLoadingSpinner(true)
   setTimeout(function(){
     retrieveFromIO()
   },delay*1000); 
@@ -142,10 +190,10 @@ var gaugeChart = bb.generate({ // Generates the Gauge chart
     },
     color: {
       pattern: [
-        "#FF0000",
-        "#F97600",
-        "#F6C600",
-        "#60B044"
+        "rgb(255, 0, 0)",
+        "rgb(249, 118, 0)",
+        "rgb(246, 198, 0)",
+        "rgb(96, 176, 68)"
       ],
       threshold: {
         values: gaugeColorSwitchValues
@@ -218,7 +266,7 @@ var lineChart = bb.generate({ // Generates the History chart
 
 if (autoRefreshInterval){ // refreshes after a certain interval
   intervalId = window.setInterval(function(){
-    document.querySelector(".lds-roller").style = "display:block;"
+    showLoadingSpinner(true)
     retrieveFromIO()
   }, autoRefreshInterval*1000)
 }
@@ -227,7 +275,7 @@ document.getElementById("refreshButton").addEventListener("click", function() { 
   delayedRetrieveFromIO(refreshDelay)
 })
 
-document.addEventListener("visibilitychange", function() {
+document.addEventListener("visibilitychange", function() { // refreshes if user returns to page
   if (!document.hidden) {
     delayedRetrieveFromIO(refreshDelay)
   } 
@@ -240,5 +288,7 @@ if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or fee
   adafruitIOUsername = urlParams.get("adafruitIOUsername")
   adafruitIOFeedname = urlParams.get("adafruitIOFeedname")
 }
+
+showLoadingSpinner(true)
 
 retrieveFromIO()

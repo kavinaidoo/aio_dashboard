@@ -26,13 +26,11 @@ html {
 }
 
 .bb-region-1 rect {
-  fill:#b44646;
-  fill-opacity:.1
+  fill:rgba(180, 70, 70, 1); 
 }
 
 .bb-region-0 rect {
-  fill:#4ab446;
-  fill-opacity:.1
+  fill:rgba(74, 180, 70, 1);
 }
 
 .bb-tooltip {

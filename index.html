@@ -27,12 +27,17 @@
       </div>
     </nav>
 
-
-    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+    <div id="loadingSpinner" class="alert alert-secondary" style="display:none" role="alert">
+      <div class="text-center">
+        <div class="spinner-border spinner-border-sm" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    </div>
 
     <div id="alertArea" class="alert alert-success" style="display:none" role="alert"></div>
 
-    <div class="accordion" id="accordionPanelsStayOpenExample">
+    <div class="accordion" id="chartAccordion">
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
