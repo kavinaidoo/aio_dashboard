@@ -5,16 +5,17 @@ var adafruitIOUsername = ""                       // Adafruit IO username
 var adafruitIOFeedname = ""                       // Adafruit IO feed name
 var numberOfhistoryDataPoints = "60"              // Number of data points shown on history chart
 var usertimeZone = "Africa/Johannesburg"          // Transforms the time to your time zone
-var yAxisDataLabel = 'Pressure'                   // Add a label to your data on history chart
+var yAxisDataLabel = 'Water Pressure'             // Add a label to your data on history chart
 var yAxisTickValues = [0,125,250,375,500]         // Values to show on the y-axis
-var warningMinSinceLastUpdate = 15                // How long (in minutes) before showing yellow warning message
+var warningMinSinceLastUpdate = 15                // How long (in minutes) before showing warning message that data is old
 var dataMinMax = [0,500]                          // Max and min value for both charts
 var gaugeUnit = "kPa"                             // Adds a unit to the gauge
 var gaugeColorSwitchValues = [30,60,90,100]       // Changes color of gauge based on these values [<=red, orange, yellow, >=green]
 var historyChartRedGreenValue = 100               // The region above this will have a green background, below will have red
-var autoRefreshInterval = 0                       // How long (in seconds) between auto refreshing. If 0, will not auto refresh.
-var refreshDelay = 5                              // How long (in seconds) to show loading icon when refresh is button is pressed 
-var enableLogging = false                         // Enables console.logs
+var autoRefreshInterval = 0                       // How long (in seconds) between auto refreshing. If 0, will not auto refresh. No dependency on refreshDelay
+var refreshDelay = 5                              // How long (in seconds) to show loading icon when refreshing. No dependency on autoRefreshInterval
+var showRangeComments = true                      // eg. <yAxisDataLabel> is currently zero, <yAxisDataLabel> is within normal range. Uses gaugeColorSwitchValues for limits
+var enableLogging = true                          // Enables console.logs present in code
 
 // --------------- Function Declaration
 
@@ -41,25 +42,31 @@ function retrieveFromIO(){ // retrieves data from Adafruit IO and plots charts
 
         minSinceLastUpdate = Math.round((Date.now() - Date.parse(data[0].created_at))/1000/60,2)
 
-        if (minSinceLastUpdate > warningMinSinceLastUpdate){
+        if (minSinceLastUpdate > warningMinSinceLastUpdate){ // checks if data is old, shows warning
 
-          statusAlert("Data is "+minSinceLastUpdate+" minutes old, sensor does not have power or internet access.","warning",true)
+          statusAlert("Warning: Gauge and History Charts were last updated "+minSinceLastUpdate+" minutes ago. Sensor has either lost power or internet access.","warning",true)
           
-        } else {
+        } else if (showRangeComments){ // if data is not old, comments on the data
 
-          var alertText = ''
+          var latestReading = parseFloat(data[0].value)
 
-          if (minSinceLastUpdate < 1){
-            alertText = "Data updated less than a minute ago."         
-          }
-          if (minSinceLastUpdate == 1){
-            alertText = "Data updated a minute ago."         
-          }
-          if (minSinceLastUpdate > 1){ 
-            alertText = "Data updated "+minSinceLastUpdate+" minutes ago."
-          }
+          if (latestReading <= 0){
+            
+            statusAlert(yAxisDataLabel+" is currently zero.","danger",true)
+            
+          } else if (latestReading < gaugeColorSwitchValues[1]){
 
-          statusAlert(alertText,"success",true)
+            statusAlert(yAxisDataLabel+" is very low.","danger",true)
+
+          } else if (latestReading < gaugeColorSwitchValues[3]){
+
+            statusAlert(yAxisDataLabel+" is below normal range.","warning",true)
+
+          } else {
+
+            statusAlert(yAxisDataLabel+" is within normal range.","success",true)
+
+          }
 
         }
           
@@ -264,14 +271,14 @@ var lineChart = bb.generate({ // Generates the History chart
 
 // --------------- Listeners for events
 
-if (autoRefreshInterval){ // refreshes after a certain interval
+if (autoRefreshInterval){ // automatically refreshes after a certain interval
   intervalId = window.setInterval(function(){
     showLoadingSpinner(true)
     retrieveFromIO()
   }, autoRefreshInterval*1000)
 }
 
-document.getElementById("refreshButton").addEventListener("click", function() { // adds functionality to refresh button
+document.getElementById("refreshButton").addEventListener("click", function() { // refreshes if user taps/clicks button
   delayedRetrieveFromIO(refreshDelay)
 })
 
@@ -282,6 +289,8 @@ document.addEventListener("visibilitychange", function() { // refreshes if user 
 });
 
 // --------------- Main Code
+
+document.getElementById("historyAccordionHeader").innerText = "History (last "+numberOfhistoryDataPoints+" readings)" // adds number of readings to History title
 
 if (adafruitIOUsername == "" || adafruitIOFeedname == ""){ // if username or feedname are blank, check query parameters for the information
   urlParams = new URLSearchParams(window.location.search)
