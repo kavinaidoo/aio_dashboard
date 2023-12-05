@@ -24,7 +24,6 @@ This project includes code from:
 * d3 - [Link](https://github.com/d3/d3) - ISC License
 * billboard.js - [Link](https://github.com/naver/billboard.js) - MIT License
 * The Vanilla JS Toolkit - [Link](https://vanillajstoolkit.com/) - MIT License
-* Pure CSS Loaders - [Link](https://github.com/loadingio/css-spinner) - CC0 License
 * Bootstrap - [Link](https://github.com/twbs/bootstrap) - MIT License
 
 The full licenses for these can be found in LICENSE.MD
